@@ -7,12 +7,11 @@ from shapely.geometry import Polygon, LineString
 pd.set_option('display.max_columns', 100)
 pd.set_option('display.width', 250)
 
-filepath = ''
-filename = 'postaldistricts.shp'
+year = '2025'
 
-gdf = gpd.read_file(os.path.join(filepath, filename))  # Read your shapefile (or other data source)
-gdf = gdf.to_crs("EPSG:4326")
-print(gdf.head())
+
+filepath = r''
+filename = 'postaldistricts.shp'
 
 def remove_z(geom):
     if geom.has_z:
@@ -24,17 +23,26 @@ def remove_z(geom):
             return geom  # Retain as-is for other geometry types
     return geom
 
+gdf = gpd.read_file(os.path.join(filepath, filename))  # Read your shapefile (or other data source)
+gdf = gdf.to_crs("EPSG:4326")
+print(gdf.head())
+
 # Apply the function to the GeoDataFrame's geometry column
 gdf['geometry'] = gdf['geometry'].apply(remove_z)
-# gdf['geometry'] = gdf['geometry'].simplify(tolerance=0.001, preserve_topology=True)
-gdf['geometry'] = gdf['geometry'].simplify(tolerance=0.0001, preserve_topology=True)
+# gdf['geometry'] = gdf['geometry'].simplify(tolerance=0.0001, preserve_topology=True) # lowres
+gdf['geometry'] = gdf['geometry'].simplify(tolerance=0.00001, preserve_topology=True) # highres
 
 # Step 2: Convert the GeoDataFrame to a GeoJSON dictionary
-geojson_dict = json.loads(gdf[['nouveau_PO', 'geometry']].to_json())
+if year == '2024':
+    geojson_dict = json.loads(gdf[['nouveau_PO', 'geometry']].to_json())
+elif year == '2025':
+    geojson_dict = json.loads(gdf[['new_po', 'geometry']].to_json())
 
 # Step 3: Use Topology to convert GeoJSON to TopoJSON
 topo = Topology(geojson_dict, prequantize=False)
 topojson_data = topo.to_dict()  # Convert Topology object to dictionary
 
-with open("postaldistricts_lowres.json", "w") as f:
+with open("postaldistricts_highres_2025.json", "w") as f:
     json.dump(topo.to_dict(), f, indent=2)
+
+''
